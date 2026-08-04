@@ -1,0 +1,180 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
+  background: #f4f6f8;
+  color: #1a1a2e;
+}
+
+.app {
+  padding: 16px;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  gap: 12px;
+}
+
+header h1 {
+  font-size: 20px;
+}
+
+.key-input {
+  width: 280px;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.panes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.pane {
+  background: #fff;
+  border: 1px solid #e2e6ea;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title-input {
+  padding: 9px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #445;
+}
+
+textarea {
+  width: 100%;
+  height: 250px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.gen-btn {
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #2f5df4;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.gen-btn:disabled {
+  background: #9ab;
+  cursor: wait;
+}
+
+.error {
+  color: #d02b2b;
+  font-size: 13px;
+}
+
+.out-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.tab {
+  padding: 6px 14px;
+  border: 1px solid #ccd;
+  border-radius: 6px;
+  background: #f2f4f7;
+  color: #556;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #2f5df4;
+  border-color: #2f5df4;
+  color: #fff;
+}
+
+.out-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.out-btns button {
+  padding: 6px 14px;
+  border: 1px solid #2f5df4;
+  border-radius: 6px;
+  background: #fff;
+  color: #2f5df4;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.output {
+  flex: 1;
+  min-height: 560px;
+  padding: 12px;
+  background: #fafbfc;
+  border: 1px solid #e2e6ea;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: auto;
+}
+
+/* ═══ v3: 검증 배지 ═══ */
+.badge {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.badge.ok {
+  background: #e7f6ec;
+  border: 1px solid #9fd6b0;
+  color: #1c6b3a;
+}
+.badge.warn {
+  background: #fdf1e7;
+  border: 1px solid #f0c090;
+  color: #9a5b12;
+}
+.badge ul {
+  margin: 6px 0 0 18px;
+  font-weight: 400;
+}
+.badge li {
+  margin: 2px 0;
+}

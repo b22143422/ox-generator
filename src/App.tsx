@@ -22,7 +22,8 @@ const PROMPT_EASY = `너는 한국 고등학교 1학년 영어 내신 대비 "O/
 8. 객관식이 5문항이면 정답 번호는 1,2,3,4,5를 정확히 한 번씩 사용한다(순서는 섞는다).
    5문항이 아니면 같은 번호가 2회를 넘지 않게 분산한다.
 9. 객관식 정답 선지는 본문의 사실과 정확히 일치해야 한다. 본문 표현을 과장하거나 바꾸지 않는다.
-10. 영어 문항은 본문 문장을 그대로 복사하지 말고 고1 수준 어휘로 패러프레이즈한다. 끊어읽기 슬래시(/)는 사용하지 않는다.`;
+10. 영어 문항은 본문 문장을 그대로 복사하지 말고 고1 수준 어휘로 패러프레이즈한다. 끊어읽기 슬래시(/)는 사용하지 않는다.
+11. 출제 기법을 문항 텍스트에 드러내지 않는다. "The combination of two adjacent sentences...", "인접한 두 문장을 종합하면..." 같은 표현을 문항에 쓰지 않는다.`;
 
 // ─────────────────────────────────────────────
 // 프롬프트: 어려움 (상위권 변별 — 표면 스캔 무력화)
@@ -49,6 +50,7 @@ const PROMPT_HARD = `너는 한국 고등학교 영어 내신 "O/X 내용일치 
 6. O(일치) 문항 규칙:
    - 본문과 어순·구문이 비슷한 패러프레이즈 금지. 태 전환, 절↔구 변환, 서술 관점 전환으로 문장 구조를 완전히 재조립한다.
    - 영어 O 문항의 약 3분의 1은 인접한 두 문장의 정보를 종합해야만 참임이 확인되는 2문장 종합형으로 만든다.
+   - [절대 금지] 2문장 종합형이라는 사실을 문항 텍스트에 드러내지 않는다. "The combination of two adjacent sentences shows/reveals/proves...", "인접한 두 문장을 종합하면..." 같은 출제 기법 설명 표현을 문항에 절대 쓰지 않는다. 문항은 다른 문항과 똑같이 지문 내용을 서술하는 평범한 한 문장이어야 하며, 두 문장을 종합해야 한다는 사실은 학생이 스스로 알아내야 한다.
 7. [중복 금지] 본문의 각 문장은 시험지 전체에서 단 1개의 문항에만 근거로 사용한다(2문장 종합형은 두 문장을 함께 소진한 것으로 친다). 한글 O/X, 영어 O/X, 객관식은 하나의 시험지로 취급한다. 같은 본문의 한글 문항과 영어 문항은 서로 다른 문장을 근거로 삼는다.
 8. 객관식 규칙 (변별력 핵심):
    - 오답 선지 4개 전부 본문의 어휘·소재·인물을 재사용하되 인과·범위·관계만 왜곡한다. 본문에 없는 내용으로 만든 상식 소거형 오답 금지.
@@ -101,10 +103,14 @@ function countSentences(p) {
 function planCounts(paragraphs) {
   return paragraphs.map((p) => {
     const sent = Math.max(countSentences(p), 1);
+    // 3문장 이하의 짧은 단락(개요·요약문)은 소재가 부족하므로 축소 출제
+    if (sent <= 3) {
+      return { sent, kor: 1, eng: Math.min(2, sent) };
+    }
     return {
       sent,
-      kor: Math.max(2, Math.floor(sent / 6)),
-      eng: Math.max(2, Math.floor(sent / 3)),
+      kor: Math.min(4, Math.max(2, Math.floor(sent / 6))),
+      eng: Math.min(6, Math.max(2, Math.floor(sent / 3))),
     };
   });
 }
@@ -140,6 +146,9 @@ function validateData(data, plan, difficulty) {
       issues.push(`본문 ${i + 1}: 영어 O/X ${s.englishOX?.length ?? 0}문항 (지시: ${c.eng})`);
   });
 
+  const kAll = data.sets.flatMap((s) => s.koreanOX || []);
+  const eAll = data.sets.flatMap((s) => s.englishOX || []);
+
   const mc = data.multipleChoice || [];
   if (mc.length !== plan.length)
     issues.push(`객관식 ${mc.length}문항 — 단락 수(${plan.length})와 일치해야 함`);
@@ -160,16 +169,28 @@ function validateData(data, plan, difficulty) {
         `객관식 정답 분산 위반: [${mc.map((m) => CIRCLED[m.answer - 1]).join(' ')}] — 1~5 각 1회여야 함`
       );
   } else if (mc.length >= 3) {
+    // 문항 수에 비례한 임계값: 균등 배분(n/5)의 2배 + 1까지 허용
+    const limit = Math.max(2, Math.ceil((mc.length / 5) * 2) + 1);
     const counts = {};
     mc.forEach((m) => (counts[m.answer] = (counts[m.answer] || 0) + 1));
     Object.entries(counts).forEach(([num, c]) => {
-      if (c > 2) issues.push(`객관식 정답 ${CIRCLED[num - 1]}번이 ${c}회 — 쏠림`);
+      if (c > limit)
+        issues.push(
+          `객관식 정답 ${CIRCLED[num - 1]}번이 ${c}회 — 쏠림 (${mc.length}문항 기준 최대 ${limit}회)`
+        );
     });
   }
 
+  // 출제 기법 노출(2문장 종합형 메타 표현) 검출
+  const metaRe = /(combination of (two|2) adjacent sentences|two adjacent sentences (show|reveal|prove|demonstrate|confirm|illustrate)|인접한 두 문장)/i;
+  [...kAll, ...eAll].forEach((q) => {
+    if (metaRe.test(q.text || ''))
+      issues.push(
+        `출제 기법 노출: "${(q.text || '').slice(0, 45)}..." — 2문장 종합형임을 문항에 쓰면 안 됨`
+      );
+  });
+
   // O/X 비율
-  const kAll = data.sets.flatMap((s) => s.koreanOX || []);
-  const eAll = data.sets.flatMap((s) => s.englishOX || []);
   const ratio = (arr) => arr.filter((q) => q.answer === 'X').length / Math.max(arr.length, 1);
   const kr = ratio(kAll);
   const er = ratio(eAll);
@@ -201,8 +222,16 @@ function validateData(data, plan, difficulty) {
   const engX = eAll.filter((q) => q.answer === 'X');
   const extremeCount = engX.filter((q) => extremeRe.test(q.text)).length;
   if (difficulty === 'hard') {
-    if (extremeCount > 0)
-      issues.push(`극단 표현 함정 ${extremeCount}개 발견 — 어려움 모드에서는 금지`);
+    if (extremeCount > 0) {
+      const samples = engX
+        .filter((q) => extremeRe.test(q.text))
+        .slice(0, 3)
+        .map((q) => `"${q.text.slice(0, 40)}..."`)
+        .join(', ');
+      issues.push(
+        `극단 표현 함정 ${extremeCount}개 발견 — 어려움 모드에서는 금지 (예: ${samples})`
+      );
+    }
   } else if (engX.length > 0 && extremeCount / engX.length > 0.34) {
     issues.push(`극단 표현 함정 과다: 영어 X ${engX.length}개 중 ${extremeCount}개`);
   }
@@ -522,6 +551,10 @@ export default function App() {
         if (issues.length === 0) break;
       }
 
+      const totalK = best.data.sets.reduce((a, s) => a + (s.koreanOX?.length || 0), 0);
+      const totalE = best.data.sets.reduce((a, s) => a + (s.englishOX?.length || 0), 0);
+      const totalM = (best.data.multipleChoice || []).length;
+
       setResult({
         data: best.data,
         markdown: buildMarkdown(best.data, t),
@@ -529,6 +562,7 @@ export default function App() {
         title: t,
         issues: best.issues,
         difficulty,
+        counts: { k: totalK, e: totalE, m: totalM, sets: best.data.sets.length },
       });
       setTab('md');
     } catch (e) {
@@ -625,7 +659,7 @@ export default function App() {
   return (
     <div className="app">
       <header>
-        <h1>OX 내용일치 문제 생성기 v3.5</h1>
+        <h1>OX 내용일치 문제 생성기 v3.6</h1>
         <input
           type="password"
           className="key-input"
@@ -678,6 +712,14 @@ export default function App() {
 
         {/* 우측: 출력 */}
         <div className="pane">
+          {result && result.counts.sets > 8 && (
+            <div className="badge warn">
+              ⚠ 단락 {result.counts.sets}개 · 총 {result.counts.k + result.counts.e + result.counts.m}문항
+              (한글 {result.counts.k} / 영어 {result.counts.e} / 객관식 {result.counts.m}) — 한 시험지로는 과다합니다.
+              지문을 파트별로 나눠 여러 번 돌리면 규칙 준수율과 문항 품질이 올라갑니다.
+            </div>
+          )}
+
           {result && (
             <div className={result.issues.length === 0 ? 'badge ok' : 'badge warn'}>
               {result.issues.length === 0

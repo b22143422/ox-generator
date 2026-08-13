@@ -1,8 +1,4 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
@@ -10,11 +6,7 @@ body {
   color: #1a1a2e;
 }
 
-.app {
-  padding: 16px;
-  max-width: 1500px;
-  margin: 0 auto;
-}
+.app { padding: 16px; max-width: 1500px; margin: 0 auto; }
 
 header {
   display: flex;
@@ -24,9 +16,7 @@ header {
   gap: 12px;
 }
 
-header h1 {
-  font-size: 20px;
-}
+header h1 { font-size: 20px; }
 
 .key-input {
   width: 280px;
@@ -58,11 +48,7 @@ header h1 {
   font-size: 14px;
 }
 
-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #445;
-}
+label { font-size: 13px; font-weight: 600; color: #445; }
 
 textarea {
   width: 100%;
@@ -86,15 +72,9 @@ textarea {
   cursor: pointer;
 }
 
-.gen-btn:disabled {
-  background: #9ab;
-  cursor: wait;
-}
+.gen-btn:disabled { background: #9ab; cursor: wait; }
 
-.error {
-  color: #d02b2b;
-  font-size: 13px;
-}
+.error { color: #d02b2b; font-size: 13px; }
 
 .out-head {
   display: flex;
@@ -103,10 +83,7 @@ textarea {
   gap: 8px;
 }
 
-.tabs {
-  display: flex;
-  gap: 6px;
-}
+.tabs { display: flex; gap: 6px; }
 
 .tab {
   padding: 6px 14px;
@@ -124,10 +101,7 @@ textarea {
   color: #fff;
 }
 
-.out-btns {
-  display: flex;
-  gap: 6px;
-}
+.out-btns { display: flex; gap: 6px; }
 
 .out-btns button {
   padding: 6px 14px;
@@ -161,20 +135,22 @@ textarea {
   font-weight: 600;
   line-height: 1.5;
 }
-.badge.ok {
-  background: #e7f6ec;
-  border: 1px solid #9fd6b0;
-  color: #1c6b3a;
+.badge.ok { background: #e7f6ec; border: 1px solid #9fd6b0; color: #1c6b3a; }
+.badge.warn { background: #fdf1e7; border: 1px solid #f0c090; color: #9a5b12; }
+.badge ul { margin: 6px 0 0 18px; font-weight: 400; }
+.badge li { margin: 2px 0; }
+
+/* ═══ v3.4: 모드 토글 ═══ */
+.mode-toggle { display: flex; gap: 6px; }
+.mode-btn {
+  flex: 1;
+  padding: 9px 10px;
+  border: 1px solid #ccd;
+  border-radius: 6px;
+  background: #f2f4f7;
+  color: #556;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
 }
-.badge.warn {
-  background: #fdf1e7;
-  border: 1px solid #f0c090;
-  color: #9a5b12;
-}
-.badge ul {
-  margin: 6px 0 0 18px;
-  font-weight: 400;
-}
-.badge li {
-  margin: 2px 0;
-}
+.mode-btn.active { background: #2f5df4; border-color: #2f5df4; color: #fff; }

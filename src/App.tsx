@@ -445,9 +445,24 @@ function buildStudioJson(data, title) {
 // ─────────────────────────────────────────────
 // Gemini 호출 (모델 배열 폴백)
 // ─────────────────────────────────────────────
+// 키·프로젝트 단위 문제(지출 한도, 결제, 잘못된 키 등)는 모델을 바꿔도 똑같이 실패하므로 폴백을 즉시 중단한다
+const FATAL_ERR = /(spending cap|exceeded|quota|RESOURCE_EXHAUSTED|billing|suspended|API key not valid|API_KEY_INVALID|PERMISSION_DENIED)/i;
+
+function friendlyHint(msg) {
+  if (/spending cap/i.test(msg))
+    return '\n\n→ 원인: API 키가 속한 구글 프로젝트의 월 지출 한도(spend cap) 초과. 코드 문제가 아닙니다.\n→ 해결: https://ai.studio/spend 에서 한도를 올리거나, AI Studio에서 다른 프로젝트의 새 API 키를 발급받아 위의 키 입력칸에 교체하세요.';
+  if (/quota|RESOURCE_EXHAUSTED/i.test(msg))
+    return '\n\n→ 원인: 분당/일일 호출 한도 초과. 1~2분 기다렸다가 다시 시도하세요.';
+  if (/API key not valid|API_KEY_INVALID/i.test(msg))
+    return '\n\n→ 원인: API 키가 올바르지 않습니다. AI Studio에서 키를 다시 복사해 붙여넣으세요.';
+  if (/billing|suspended|PERMISSION_DENIED/i.test(msg))
+    return '\n\n→ 원인: 구글 프로젝트의 결제/권한 문제. AI Studio에서 프로젝트 상태를 확인하세요.';
+  return '';
+}
+
 async function callGemini(apiKey, models, systemText, userText) {
   const list = [].concat(models);
-  let lastErr = null;
+  const errors = [];
   for (const model of list) {
     try {
       const res = await fetch(
@@ -466,15 +481,17 @@ async function callGemini(apiKey, models, systemText, userText) {
         }
       );
       const dataRes = await res.json();
-      if (dataRes.error) throw new Error(`[${model}] ` + dataRes.error.message);
+      if (dataRes.error) throw new Error(dataRes.error.message);
       const raw =
         dataRes?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
       return JSON.parse(raw.replace(/```json|```/g, '').trim());
     } catch (e) {
-      lastErr = e;
+      errors.push(`[${model}] ${e.message}`);
+      if (FATAL_ERR.test(e.message)) break; // 키/계정 문제 → 다음 모델로 넘어가지 않고 즉시 중단
     }
   }
-  throw lastErr;
+  const joined = errors.join('\n');
+  throw new Error(joined + friendlyHint(joined));
 }
 
 // ─────────────────────────────────────────────
@@ -539,7 +556,7 @@ export default function App() {
 
         const data = await callGemini(
           apiKey,
-          ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'],
+          ['gemini-3.6-flash', 'gemini-3.5-flash'],
           systemPrompt,
           userPrompt
         );
@@ -659,7 +676,7 @@ export default function App() {
   return (
     <div className="app">
       <header>
-        <h1>OX 내용일치 문제 생성기 v3.6</h1>
+        <h1>OX 내용일치 문제 생성기 v3.7</h1>
         <input
           type="password"
           className="key-input"
@@ -707,7 +724,7 @@ export default function App() {
           <button className="gen-btn" onClick={generate} disabled={loading}>
             {loading ? status || '생성 중...' : '문제 생성'}
           </button>
-          {error && <p className="error">{error}</p>}
+          {error && <p className="error" style={{ whiteSpace: 'pre-line' }}>{error}</p>}
         </div>
 
         {/* 우측: 출력 */}
